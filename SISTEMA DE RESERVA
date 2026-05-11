@@ -205,35 +205,17 @@ Estado: {self.estado}
 
 clientes = []
 reservas = []
+servicios = []
 
 
 # ================================
-# PRUEBAS INICIALES
+# MAIN
 # ================================
 
-try:
+if __name__ == "__main__":
 
-    cliente1 = Cliente("Emerson", "emerson@gmail.com")
-    clientes.append(cliente1)
-
-    servicio1 = ReservaSala(
-        "Sala Ejecutiva",
-        50000,
-        3
-    )
-
-    reserva1 = Reserva(
-        cliente1,
-        servicio1,
-        3
-    )
-
-    reservas.append(reserva1)
-
-    print(reserva1.procesar())
-
-except Exception as e:
-
-    logging.error(e)
-    print("Ocurrió un error:", e)
+    print("===================================")
+    print(" SOFTWARE FJ ")
+    print(" Sistema iniciado correctamente ")
+    print("===================================")
     
