@@ -1,0 +1,239 @@
+# ================================
+# SOFTWARE FJ
+# Sistema de Clientes, Servicios y Reservas
+# Código Base Inicial
+# ================================
+
+from abc import ABC, abstractmethod
+import logging
+
+
+# ================================
+# CONFIGURACIÓN LOGS
+# ================================
+
+logging.basicConfig(
+    filename="logs.txt",
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+# ================================
+# EXCEPCIONES PERSONALIZADAS
+# ================================
+
+class ClienteError(Exception):
+    pass
+
+
+class ServicioError(Exception):
+    pass
+
+
+class ReservaError(Exception):
+    pass
+
+
+# ================================
+# CLASE ABSTRACTA ENTIDAD
+# ================================
+
+class Entidad(ABC):
+
+    @abstractmethod
+    def mostrar_info(self):
+        pass
+
+
+# ================================
+# CLASE CLIENTE
+# ================================
+
+class Cliente(Entidad):
+
+    def __init__(self, nombre, correo):
+        self.__nombre = nombre
+        self.__correo = correo
+
+    # GETTERS
+    def get_nombre(self):
+        return self.__nombre
+
+    def get_correo(self):
+        return self.__correo
+
+    # SETTERS
+    def set_nombre(self, nombre):
+        if not nombre.strip():
+            raise ClienteError("El nombre no puede estar vacío")
+        self.__nombre = nombre
+
+    def set_correo(self, correo):
+        if "@" not in correo:
+            raise ClienteError("Correo inválido")
+        self.__correo = correo
+
+    def mostrar_info(self):
+        return f"Cliente: {self.__nombre} | Correo: {self.__correo}"
+
+
+# ================================
+# CLASE ABSTRACTA SERVICIO
+# ================================
+
+class Servicio(ABC):
+
+    def __init__(self, nombre, precio_base):
+        self.nombre = nombre
+        self.precio_base = precio_base
+
+    @abstractmethod
+    def calcular_costo(self):
+        pass
+
+    @abstractmethod
+    def descripcion(self):
+        pass
+
+
+# ================================
+# SERVICIO: RESERVA DE SALAS
+# ================================
+
+class ReservaSala(Servicio):
+
+    def __init__(self, nombre, precio_base, horas):
+        super().__init__(nombre, precio_base)
+        self.horas = horas
+
+    def calcular_costo(self):
+        return self.precio_base * self.horas
+
+    def descripcion(self):
+        return f"Reserva de sala por {self.horas} horas"
+
+
+# ================================
+# SERVICIO: ALQUILER EQUIPOS
+# ================================
+
+class AlquilerEquipo(Servicio):
+
+    def __init__(self, nombre, precio_base, dias):
+        super().__init__(nombre, precio_base)
+        self.dias = dias
+
+    def calcular_costo(self):
+        return self.precio_base * self.dias
+
+    def descripcion(self):
+        return f"Alquiler por {self.dias} días"
+
+
+# ================================
+# SERVICIO: ASESORÍA
+# ================================
+
+class Asesoria(Servicio):
+
+    def __init__(self, nombre, precio_base, nivel):
+        super().__init__(nombre, precio_base)
+        self.nivel = nivel
+
+    def calcular_costo(self):
+        if self.nivel.lower() == "avanzada":
+            return self.precio_base * 2
+        return self.precio_base
+
+    def descripcion(self):
+        return f"Asesoría nivel {self.nivel}"
+
+
+# ================================
+# CLASE RESERVA
+# ================================
+
+class Reserva:
+
+    def __init__(self, cliente, servicio, duracion):
+        self.cliente = cliente
+        self.servicio = servicio
+        self.duracion = duracion
+        self.estado = "Pendiente"
+
+    def confirmar(self):
+        self.estado = "Confirmada"
+
+    def cancelar(self):
+        self.estado = "Cancelada"
+
+    def procesar(self):
+
+        try:
+
+            if self.estado == "Cancelada":
+                raise ReservaError(
+                    "No se puede procesar una reserva cancelada"
+                )
+
+            costo = self.servicio.calcular_costo()
+
+            if costo <= 0:
+                raise ReservaError("Costo inválido")
+
+            self.confirmar()
+
+            return f"""
+Reserva procesada correctamente
+Cliente: {self.cliente.get_nombre()}
+Servicio: {self.servicio.descripcion()}
+Costo: ${costo}
+Estado: {self.estado}
+"""
+
+        except Exception as e:
+
+            logging.error(e)
+
+            return f"Error: {e}"
+
+
+# ================================
+# LISTAS DEL SISTEMA
+# ================================
+
+clientes = []
+reservas = []
+
+
+# ================================
+# PRUEBAS INICIALES
+# ================================
+
+try:
+
+    cliente1 = Cliente("Emerson", "emerson@gmail.com")
+    clientes.append(cliente1)
+
+    servicio1 = ReservaSala(
+        "Sala Ejecutiva",
+        50000,
+        3
+    )
+
+    reserva1 = Reserva(
+        cliente1,
+        servicio1,
+        3
+    )
+
+    reservas.append(reserva1)
+
+    print(reserva1.procesar())
+
+except Exception as e:
+
+    logging.error(e)
+    print("Ocurrió un error:", e)
+    
