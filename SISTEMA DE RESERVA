@@ -1,11 +1,16 @@
+# Interfaz Base con Tkinter y TTK para Software FJ
+
+```python
 # ================================
 # SOFTWARE FJ
 # Sistema de Clientes, Servicios y Reservas
-# Código Base Inicial
+# Interfaz con Tkinter + TTK
 # ================================
 
 from abc import ABC, abstractmethod
 import logging
+import tkinter as tk
+from tkinter import ttk, messagebox
 
 
 # ================================
@@ -56,14 +61,12 @@ class Cliente(Entidad):
         self.__nombre = nombre
         self.__correo = correo
 
-    # GETTERS
     def get_nombre(self):
         return self.__nombre
 
     def get_correo(self):
         return self.__correo
 
-    # SETTERS
     def set_nombre(self, nombre):
         if not nombre.strip():
             raise ClienteError("El nombre no puede estar vacío")
@@ -98,7 +101,7 @@ class Servicio(ABC):
 
 
 # ================================
-# SERVICIO: RESERVA DE SALAS
+# SERVICIOS
 # ================================
 
 class ReservaSala(Servicio):
@@ -114,10 +117,6 @@ class ReservaSala(Servicio):
         return f"Reserva de sala por {self.horas} horas"
 
 
-# ================================
-# SERVICIO: ALQUILER EQUIPOS
-# ================================
-
 class AlquilerEquipo(Servicio):
 
     def __init__(self, nombre, precio_base, dias):
@@ -130,10 +129,6 @@ class AlquilerEquipo(Servicio):
     def descripcion(self):
         return f"Alquiler por {self.dias} días"
 
-
-# ================================
-# SERVICIO: ASESORÍA
-# ================================
 
 class Asesoria(Servicio):
 
@@ -184,38 +179,155 @@ class Reserva:
 
             self.confirmar()
 
-            return f"""
-Reserva procesada correctamente
-Cliente: {self.cliente.get_nombre()}
-Servicio: {self.servicio.descripcion()}
-Costo: ${costo}
-Estado: {self.estado}
-"""
+            return f"Reserva confirmada - Total: ${costo}"
 
         except Exception as e:
 
             logging.error(e)
-
             return f"Error: {e}"
 
 
 # ================================
-# LISTAS DEL SISTEMA
+# LISTAS
 # ================================
 
 clientes = []
-reservas = []
 servicios = []
+reservas = []
 
 
 # ================================
-# MAIN
+# FUNCIONES INTERFAZ
 # ================================
 
-if __name__ == "__main__":
 
-    print("===================================")
-    print(" SOFTWARE FJ ")
-    print(" Sistema iniciado correctamente ")
-    print("===================================")
-    
+def registrar_cliente():
+
+    try:
+
+        nombre = entry_nombre.get()
+        correo = entry_correo.get()
+
+        cliente = Cliente(nombre, correo)
+
+        clientes.append(cliente)
+
+        tabla_clientes.insert(
+            "",
+            tk.END,
+            values=(cliente.get_nombre(), cliente.get_correo())
+        )
+
+        messagebox.showinfo(
+            "Éxito",
+            "Cliente registrado correctamente"
+        )
+
+        entry_nombre.delete(0, tk.END)
+        entry_correo.delete(0, tk.END)
+
+    except Exception as e:
+
+        logging.error(e)
+        messagebox.showerror("Error", str(e))
+
+
+# ================================
+# VENTANA PRINCIPAL
+# ================================
+
+ventana = tk.Tk()
+ventana.title("Software FJ")
+ventana.geometry("700x500")
+ventana.resizable(False, False)
+
+
+# ================================
+# ESTILOS TTK
+# ================================
+
+style = ttk.Style()
+style.theme_use("clam")
+
+
+# ================================
+# FRAME PRINCIPAL
+# ================================
+
+frame = ttk.Frame(ventana, padding=20)
+frame.pack(fill="both", expand=True)
+
+
+# ================================
+# TÍTULO
+# ================================
+
+label_titulo = ttk.Label(
+    frame,
+    text="SOFTWARE FJ",
+    font=("Arial", 20, "bold")
+)
+label_titulo.pack(pady=10)
+
+
+# ================================
+# FORMULARIO CLIENTES
+# ================================
+
+label_nombre = ttk.Label(frame, text="Nombre")
+label_nombre.pack()
+
+entry_nombre = ttk.Entry(frame, width=40)
+entry_nombre.pack(pady=5)
+
+
+label_correo = ttk.Label(frame, text="Correo")
+label_correo.pack()
+
+entry_correo = ttk.Entry(frame, width=40)
+entry_correo.pack(pady=5)
+
+
+btn_registrar = ttk.Button(
+    frame,
+    text="Registrar Cliente",
+    command=registrar_cliente
+)
+
+btn_registrar.pack(pady=10)
+
+
+# ================================
+# TABLA CLIENTES
+# ================================
+
+columnas = ("Nombre", "Correo")
+
+tabla_clientes = ttk.Treeview(
+    frame,
+    columns=columnas,
+    show="headings",
+    height=10
+)
+
+for col in columnas:
+    tabla_clientes.heading(col, text=col)
+    tabla_clientes.column(col, width=250)
+
+
+tabla_clientes.pack(pady=20)
+
+
+# ================================
+# EJECUCIÓN
+# ================================
+
+ventana.mainloop()
+
+```
+
+## Commit sugerido
+
+```bash
+git commit -m "feat: implementación inicial de interfaz gráfica con ttk"
+```
