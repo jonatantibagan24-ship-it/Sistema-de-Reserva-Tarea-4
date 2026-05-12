@@ -8,3 +8,6 @@
 2026-05-11 19:16:22,449 - ERROR - Validación: Estructura de correo inválida: josef
 2026-05-11 19:16:40,275 - INFO - Reserva: jose | Total: 100000.0
 2026-05-11 19:16:46,157 - INFO - Reserva: jose | Total: 250000.0
+2026-05-11 19:25:35,671 - ERROR - Error de Validación: Correo electrónico inválido: 
+2026-05-11 19:25:58,701 - INFO - ÉXITO: Cliente juan gabriel reservó Asesoría
+2026-05-11 19:26:27,165 - INFO - ÉXITO: Cliente fabian torres reservó Reserva de Sala
