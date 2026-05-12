@@ -1,0 +1,10 @@
+2026-05-11 19:15:09,631 - ERROR - Validación: Estructura de correo inválida: 
+2026-05-11 19:15:41,463 - ERROR - Error Reserva: Seleccione un cliente válido.
+2026-05-11 19:15:46,605 - INFO - Reserva: juan perez | Total: 54000.0
+2026-05-11 19:15:54,043 - INFO - Reserva: juan perez | Total: 100000.0
+2026-05-11 19:15:57,825 - INFO - Reserva: juan perez | Total: 100000.0
+2026-05-11 19:16:05,567 - ERROR - Validación: Estructura de correo inválida: 
+2026-05-11 19:16:15,489 - ERROR - Validación: Nombre de cliente demasiado corto o vacío.
+2026-05-11 19:16:22,449 - ERROR - Validación: Estructura de correo inválida: josef
+2026-05-11 19:16:40,275 - INFO - Reserva: jose | Total: 100000.0
+2026-05-11 19:16:46,157 - INFO - Reserva: jose | Total: 250000.0

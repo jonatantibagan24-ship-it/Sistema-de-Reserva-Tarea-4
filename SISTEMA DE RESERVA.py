@@ -2,125 +2,205 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from abc import ABC, abstractmethod
+from datetime import datetime
 
-# Configuración básica de Logs
-logging.basicConfig(filename="logs.txt", level=logging.ERROR, format="%(asctime)s - %(message)s")
+# ============================================================
+# 1. CONFIGURACIÓN DE LOGS
+# ============================================================
+logging.basicConfig(
+    filename="logs_software_fj.txt", 
+    level=logging.INFO, 
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-# Excepciones
-class AppError(Exception): pass
+# ============================================================
+# 2. EXCEPCIONES PERSONALIZADAS (Corregidas)
+# ============================================================
+class SoftwareFJError(Exception): 
+    pass
 
-# Clases de Lógica
+class ValidationError(SoftwareFJError): 
+    pass
+
+class BusinessError(SoftwareFJError): 
+    pass
+
+# ============================================================
+# 3. ARQUITECTURA ORIENTADA A OBJETOS
+# ============================================================
 class Entidad(ABC):
     @abstractmethod
-    def mostrar_info(self): pass
+    def validar(self): 
+        pass
 
 class Cliente(Entidad):
     def __init__(self, nombre, correo):
-        self.__nombre = nombre
-        self.__correo = correo
-    def get_nombre(self): return self.__nombre
-    def get_correo(self): return self.__correo
-    def mostrar_info(self): return f"Cliente: {self.__nombre} | Correo: {self.__correo}"
+        self.__nombre = self.__validar_nombre(nombre)
+        self.__correo = self.__validar_correo(correo)
 
+    def __validar_nombre(self, nombre):
+        if not nombre or len(nombre) < 3:
+            raise ValidationError("Nombre de cliente demasiado corto o vacío.")
+        return nombre
+
+    def __validar_correo(self, correo):
+        if "@" not in correo or "." not in correo:
+            raise ValidationError(f"Estructura de correo inválida: {correo}")
+        return correo
+
+    @property
+    def nombre(self): return self.__nombre
+    
+    @property
+    def correo(self): return self.__correo
+
+    def validar(self): return True
+
+# --- Polimorfismo en Servicios ---
 class Servicio(ABC):
     def __init__(self, nombre, precio_base):
-        self.nombre, self.precio_base = nombre, precio_base
+        self.nombre = nombre
+        self.precio_base = precio_base
+
     @abstractmethod
-    def calcular_costo(self): pass
+    def calcular_costo(self, descuento=0): pass
+
     @abstractmethod
-    def descripcion(self): pass
+    def obtener_detalle(self): pass
 
 class ReservaSala(Servicio):
     def __init__(self, horas):
-        super().__init__("Sala", 50000)
+        super().__init__("Reserva de Sala", 50000)
         self.horas = horas
-    def calcular_costo(self): return self.precio_base * self.horas
-    def descripcion(self): return f"Sala por {self.horas} hrs"
+
+    def calcular_costo(self, descuento=0):
+        total = self.precio_base * self.horas
+        return total - (total * (descuento / 100))
+
+    def obtener_detalle(self):
+        return f"Sala por {self.horas} horas"
 
 class AlquilerEquipo(Servicio):
     def __init__(self, dias):
-        super().__init__("Equipo", 30000)
+        super().__init__("Alquiler de Equipo", 30000)
         self.dias = dias
-    def calcular_costo(self): return self.precio_base * self.dias
-    def descripcion(self): return f"Equipo por {self.dias} días"
 
+    def calcular_costo(self, descuento=0):
+        return (self.precio_base * self.dias) * 0.90 
+
+    def obtener_detalle(self):
+        return f"Equipo por {self.dias} días"
+
+class AsesoriaEspecializada(Servicio):
+    def __init__(self, nivel="Senior"):
+        super().__init__("Asesoría", 100000)
+        self.nivel = nivel
+
+    def calcular_costo(self, descuento=0):
+        multiplicador = 2 if self.nivel == "Senior" else 1
+        return (self.precio_base * multiplicador) - descuento
+
+    def obtener_detalle(self):
+        return f"Asesoría nivel {self.nivel}"
+
+# --- Clase Reserva ---
 class Reserva:
     def __init__(self, cliente, servicio):
-        self.cliente, self.servicio, self.estado = cliente, servicio, "Confirmada"
-    def procesar(self):
-        costo = self.servicio.calcular_costo()
-        return f"Total: ${costo}"
+        self.cliente = cliente
+        self.servicio = servicio
+        self.estado = "Iniciada"
 
-# Listas de datos
-clientes, reservas = [], []
+    def procesar_pago(self):
+        try:
+            costo_final = self.servicio.calcular_costo()
+            if costo_final <= 0:
+                raise BusinessError("Costo de servicio inválido.")
+            self.estado = "Confirmada"
+            logging.info(f"Reserva: {self.cliente.nombre} | Total: {costo_final}")
+            return costo_final
+        except BusinessError as e:
+            raise SoftwareFJError("Error en procesamiento") from e
+        finally:
+            print("Procesamiento de reserva finalizado.")
 
-# Funciones de Interfaz
-def registrar_cliente():
-    nom, corr = entry_nombre.get(), entry_correo.get()
-    if nom and corr:
-        c = Cliente(nom, corr)
-        clientes.append(c)
-        tabla_clientes.insert("", tk.END, values=(c.get_nombre(), c.get_correo()))
-        combo_clientes["values"] = [cl.get_nombre() for cl in clientes]
-        entry_nombre.delete(0, tk.END); entry_correo.delete(0, tk.END)
-        messagebox.showinfo("Éxito", "Cliente registrado")
-    else:
-        messagebox.showwarning("Atención", "Llene todos los campos")
+# ============================================================
+# 4. GESTIÓN DE INTERFAZ Y LÓGICA
+# ============================================================
+lista_clientes = []
 
-def crear_reserva():
+def ejecutar_registro():
     try:
-        nom_c, serv_t, cant = combo_clientes.get(), combo_servicio.get(), int(entry_cantidad.get())
-        cliente = next((c for c in clientes if c.get_nombre() == nom_c), None)
+        nombre, correo = entry_nombre.get(), entry_correo.get()
+        nuevo_cliente = Cliente(nombre, correo)
+        lista_clientes.append(nuevo_cliente)
+    except ValidationError as e:
+        logging.error(f"Validación: {e}")
+        messagebox.showwarning("Error de Datos", str(e))
+    else:
+        tabla_clientes.insert("", tk.END, values=(nuevo_cliente.nombre, nuevo_cliente.correo))
+        combo_clientes["values"] = [c.nombre for c in lista_clientes]
+        messagebox.showinfo("Éxito", "Cliente registrado")
+    finally:
+        entry_nombre.delete(0, tk.END)
+        entry_correo.delete(0, tk.END)
+
+def ejecutar_reserva():
+    try:
+        nom_c, tipo_s, cant = combo_clientes.get(), combo_servicio.get(), entry_cantidad.get()
+        if not cant.isdigit(): raise ValueError("La cantidad debe ser numérica.")
         
-        if not cliente: raise AppError("Seleccione un cliente")
+        cliente = next((c for c in lista_clientes if c.nombre == nom_c), None)
+        if not cliente: raise BusinessError("Seleccione un cliente válido.")
+
+        cant = int(cant)
+        if tipo_s == "Sala": s = ReservaSala(cant)
+        elif tipo_s == "Equipo": s = AlquilerEquipo(cant)
+        elif tipo_s == "Asesoría": s = AsesoriaEspecializada()
+        else: raise BusinessError("Seleccione un servicio.")
+
+        reserva = Reserva(cliente, s)
+        total = reserva.procesar_pago()
         
-        if serv_t == "Reserva Sala": s = ReservaSala(cant)
-        elif serv_t == "Alquiler Equipo": s = AlquilerEquipo(cant)
-        else: raise AppError("Seleccione servicio")
-        
-        res = Reserva(cliente, s)
-        tabla_reservas.insert("", tk.END, values=(cliente.get_nombre(), s.descripcion(), res.estado))
-        messagebox.showinfo("Reserva", res.procesar())
+        tabla_reservas.insert("", tk.END, values=(cliente.nombre, s.obtener_detalle(), f"${total}"))
+        messagebox.showinfo("Reserva", f"Confirmada. Total: ${total}")
     except Exception as e:
+        logging.error(f"Error Reserva: {e}")
         messagebox.showerror("Error", str(e))
 
-# --- INTERFAZ GRÁFICA ---
-root = tk.Tk()
-root.title("Software FJ - Gestión")
-root.geometry("800x500")
+# ============================================================
+# 5. UI PRINCIPAL
+# ============================================================
+app = tk.Tk()
+app.title("Software FJ - Sistema Integral")
+app.geometry("700x550")
 
-nb = ttk.Notebook(root)
+nb = ttk.Notebook(app)
 nb.pack(fill="both", expand=True)
 
 # Pestaña Clientes
-f1 = ttk.Frame(nb, padding=10)
-nb.add(f1, text="Clientes")
-ttk.Label(f1, text="Nombre:").grid(row=0, column=0)
-entry_nombre = ttk.Entry(f1)
-entry_nombre.grid(row=0, column=1)
-ttk.Label(f1, text="Correo:").grid(row=1, column=0)
-entry_correo = ttk.Entry(f1)
-entry_correo.grid(row=1, column=1)
-ttk.Button(f1, text="Registrar", command=registrar_cliente).grid(row=2, columnspan=2)
-tabla_clientes = ttk.Treeview(f1, columns=("Nom", "Corr"), show="headings")
-tabla_clientes.heading("Nom", text="Nombre"); tabla_clientes.heading("Corr", text="Correo")
-tabla_clientes.grid(row=3, columnspan=2)
+p1 = ttk.Frame(nb, padding=10)
+nb.add(p1, text="Clientes")
+ttk.Label(p1, text="Nombre:").pack()
+entry_nombre = ttk.Entry(p1, width=30); entry_nombre.pack()
+ttk.Label(p1, text="Email:").pack()
+entry_correo = ttk.Entry(p1, width=30); entry_correo.pack()
+ttk.Button(p1, text="Registrar", command=ejecutar_registro).pack(pady=5)
+tabla_clientes = ttk.Treeview(p1, columns=("N", "E"), show="headings", height=5)
+tabla_clientes.heading("N", text="Nombre"); tabla_clientes.heading("E", text="Email"); tabla_clientes.pack(fill="x")
 
 # Pestaña Reservas
-f2 = ttk.Frame(nb, padding=10)
-nb.add(f2, text="Reservas")
-ttk.Label(f2, text="Cliente:").grid(row=0, column=0)
-combo_clientes = ttk.Combobox(f2)
-combo_clientes.grid(row=0, column=1)
-ttk.Label(f2, text="Servicio:").grid(row=1, column=0)
-combo_servicio = ttk.Combobox(f2, values=["Reserva Sala", "Alquiler Equipo"])
-combo_servicio.grid(row=1, column=1)
-ttk.Label(f2, text="Cantidad (Hrs/Días):").grid(row=2, column=0)
-entry_cantidad = ttk.Entry(f2)
-entry_cantidad.grid(row=2, column=1)
-ttk.Button(f2, text="Reservar", command=crear_reserva).grid(row=3, columnspan=2)
-tabla_reservas = ttk.Treeview(f2, columns=("C", "S", "E"), show="headings")
-tabla_reservas.heading("C", text="Cliente"); tabla_reservas.heading("S", text="Servicio"); tabla_reservas.heading("E", text="Estado")
-tabla_reservas.grid(row=4, columnspan=2)
+p2 = ttk.Frame(nb, padding=10)
+nb.add(p2, text="Reservas")
+ttk.Label(p2, text="Cliente:").pack()
+combo_clientes = ttk.Combobox(p2, state="readonly"); combo_clientes.pack()
+ttk.Label(p2, text="Servicio:").pack()
+combo_servicio = ttk.Combobox(p2, values=["Sala", "Equipo", "Asesoría"], state="readonly"); combo_servicio.pack()
+ttk.Label(p2, text="Cantidad:").pack()
+entry_cantidad = ttk.Entry(p2); entry_cantidad.pack()
+ttk.Button(p2, text="Reservar", command=ejecutar_reserva).pack(pady=5)
+tabla_reservas = ttk.Treeview(p2, columns=("C", "D", "T"), show="headings")
+tabla_reservas.heading("C", text="Cliente"); tabla_reservas.heading("D", text="Detalle"); tabla_reservas.heading("T", text="Total")
+tabla_reservas.pack(fill="x")
 
-root.mainloop()
+app.mainloop()
+
