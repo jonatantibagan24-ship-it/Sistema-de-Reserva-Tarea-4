@@ -11,3 +11,29 @@
 2026-05-11 19:25:35,671 - ERROR - Error de Validación: Correo electrónico inválido: 
 2026-05-11 19:25:58,701 - INFO - ÉXITO: Cliente juan gabriel reservó Asesoría
 2026-05-11 19:26:27,165 - INFO - ÉXITO: Cliente fabian torres reservó Reserva de Sala
+2026-05-11 19:36:59,606 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:37:11,596 - INFO - REGISTRO: Nuevo cliente juan gomez añadido.
+2026-05-11 19:37:19,458 - INFO - PROCESADO: Cliente juan gomez - Total: $200000
+2026-05-11 19:37:20,382 - INFO - PROCESADO: Cliente juan gomez - Total: $200000
+2026-05-11 19:37:23,322 - INFO - PROCESADO: Cliente juan gomez - Total: $125000
+2026-05-11 19:37:25,664 - INFO - PROCESADO: Cliente juan gomez - Total: $95000
+2026-05-11 19:37:27,634 - INFO - PROCESADO: Cliente juan gomez - Total: $180000.0
+2026-05-11 19:37:30,723 - INFO - ELIMINACIÓN: Reserva de juan gomez eliminada.
+2026-05-11 19:37:35,050 - INFO - ELIMINACIÓN: Reserva de juan gomez eliminada.
+2026-05-11 19:38:00,610 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:11,218 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:20,691 - INFO - REGISTRO: Nuevo cliente juan añadido.
+2026-05-11 19:38:23,366 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:25,256 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:29,928 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:36,408 - ERROR - VALIDACIÓN: Campos obligatorios faltantes
+2026-05-11 19:38:46,762 - INFO - PROCESADO: Cliente juan - Total: $155000
+2026-05-11 19:38:50,984 - INFO - PROCESADO: Cliente juan - Total: $250000
+2026-05-11 19:38:53,705 - INFO - PROCESADO: Cliente juan - Total: $180000.0
+2026-05-11 19:38:56,184 - INFO - PROCESADO: Cliente juan - Total: $180000.0
+2026-05-11 19:38:58,154 - ERROR - NEGOCIO: La cantidad debe ser un número.
+2026-05-11 19:38:59,876 - ERROR - NEGOCIO: La cantidad debe ser un número.
+2026-05-11 19:39:02,122 - ERROR - NEGOCIO: La cantidad debe ser un número.
+2026-05-11 19:39:05,456 - INFO - ELIMINACIÓN: Reserva de juan eliminada.
+2026-05-11 19:39:08,735 - WARNING - INTERFAZ: Intento de eliminación sin selección.
+2026-05-11 19:39:11,563 - INFO - ELIMINACIÓN: Reserva de juan eliminada.

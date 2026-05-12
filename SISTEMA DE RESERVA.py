@@ -2,10 +2,9 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from abc import ABC, abstractmethod
-from datetime import datetime
 
 # ============================================================
-# 1. CONFIGURACIÓN DE LOGS
+# 1. CONFIGURACIÓN DE LOGS (RESTABLECIDA)
 # ============================================================
 logging.basicConfig(
     filename="logs_software_fj.txt", 
@@ -16,236 +15,160 @@ logging.basicConfig(
 # ============================================================
 # 2. EXCEPCIONES PERSONALIZADAS
 # ============================================================
-class SoftwareFJError(Exception): 
-    pass
-
-class ValidationError(SoftwareFJError): 
-    pass
-
-class BusinessError(SoftwareFJError): 
-    pass
+class SoftwareFJError(Exception): pass
+class ValidationError(SoftwareFJError): pass
+class BusinessError(SoftwareFJError): pass
 
 # ============================================================
 # 3. ARQUITECTURA ORIENTADA A OBJETOS (POO)
 # ============================================================
 class Entidad(ABC):
     @abstractmethod
-    def validar(self): 
-        pass
+    def validar(self): pass
 
 class Cliente(Entidad):
     def __init__(self, nombre, correo, telefono):
-        self.__nombre = self.__validar_nombre(nombre)
-        self.__correo = self.__validar_correo(correo)
-        self.__telefono = self.__validar_telefono(telefono)
-
-    def __validar_nombre(self, nombre):
-        if not nombre or len(nombre.strip()) < 3:
-            raise ValidationError("Nombre inválido: debe tener al menos 3 caracteres.")
-        return nombre.strip()
-
-    def __validar_correo(self, correo):
-        if "@" not in correo or "." not in correo:
-            raise ValidationError(f"Correo electrónico inválido: {correo}")
-        return correo.strip()
-
-    def __validar_telefono(self, tel):
-        # Validación estricta: solo números y longitud mínima
-        if not tel or not tel.isdigit() or len(tel) < 7:
-            raise ValidationError("Teléfono obligatorio: ingrese solo números (mínimo 7 dígitos).")
-        return tel
-
-    # Encapsulamiento
+        self.__nombre = nombre
+        self.__correo = correo
+        self.__telefono = telefono
     @property
     def nombre(self): return self.__nombre
     @property
     def correo(self): return self.__correo
     @property
     def telefono(self): return self.__telefono
-
     def validar(self): return True
 
-# --- Polimorfismo en Servicios ---
 class Servicio(ABC):
     def __init__(self, nombre, precio_base):
         self.nombre = nombre
         self.precio_base = precio_base
-
     @abstractmethod
-    def calcular_costo(self, descuento=0): pass
-
+    def calcular_costo(self): pass
     @abstractmethod
     def obtener_detalle(self): pass
 
 class ReservaSala(Servicio):
-    def __init__(self, horas):
-        super().__init__("Reserva de Sala", 50000)
-        self.horas = horas
-
-    def calcular_costo(self, descuento=0):
-        total = self.precio_base * self.horas
-        return total - (total * (descuento / 100))
-
-    def obtener_detalle(self):
-        return f"Sala de juntas por {self.horas} horas"
+    def __init__(self, h): super().__init__("Sala", 50000); self.h = h
+    def calcular_costo(self): return self.precio_base * self.h
+    def obtener_detalle(self): return f"Sala por {self.h} hrs"
 
 class AlquilerEquipo(Servicio):
-    def __init__(self, dias):
-        super().__init__("Alquiler de Equipo", 30000)
-        self.dias = dias
-
-    def calcular_costo(self, descuento=0):
-        # Aplicamos un cargo fijo por mantenimiento en este servicio
-        return (self.precio_base * self.dias) + 5000
-
-    def obtener_detalle(self):
-        return f"Equipo tecnológico por {self.dias} días"
+    def __init__(self, d): super().__init__("Equipo", 30000); self.d = d
+    def calcular_costo(self): return (self.precio_base * self.d) + 5000
+    def obtener_detalle(self): return f"Equipo por {self.d} días"
 
 class AsesoriaEspecializada(Servicio):
-    def __init__(self, nivel="Senior"):
-        super().__init__("Asesoría", 120000)
-        self.nivel = nivel
+    def __init__(self): super().__init__("Asesoría", 120000)
+    def calcular_costo(self): return self.precio_base * 1.5
+    def obtener_detalle(self): return "Asesoría Senior"
 
-    def calcular_costo(self, descuento=0):
-        # Sobrecarga simulada: costo basado en nivel
-        multiplicador = 1.5 if self.nivel == "Senior" else 1.0
-        return (self.precio_base * multiplicador) - descuento
-
-    def obtener_detalle(self):
-        return f"Asesoría técnica especializada ({self.nivel})"
-
-# --- Clase Reserva ---
 class Reserva:
     def __init__(self, cliente, servicio):
-        self.cliente = cliente
-        self.servicio = servicio
-        self.estado = "Iniciada"
-
-    def procesar_pago(self):
+        self.cliente, self.servicio = cliente, servicio
+    def procesar(self):
         try:
-            costo_final = self.servicio.calcular_costo()
-            if costo_final <= 0:
-                raise BusinessError("Cálculo de costo inconsistente.")
-            self.estado = "Confirmada"
-            logging.info(f"ÉXITO: Cliente {self.cliente.nombre} reservó {self.servicio.nombre}")
-            return costo_final
-        except BusinessError as e:
-            # Encadenamiento de excepciones
-            raise SoftwareFJError("Fallo en el flujo de procesamiento") from e
-        finally:
-            print(f"Log: Intento de procesamiento para {self.cliente.nombre}")
+            costo = self.servicio.calcular_costo()
+            logging.info(f"PROCESADO: Cliente {self.cliente.nombre} - Total: ${costo}")
+            return costo
+        except Exception as e:
+            logging.error(f"Error procesando costo: {e}")
+            raise BusinessError("Error en cálculo de reserva")
 
 # ============================================================
-# 4. LÓGICA DE CONTROLADORES E INTERFAZ
+# 4. LÓGICA DE CONTROLADORES
 # ============================================================
 lista_clientes = []
 
 def ejecutar_registro():
     try:
-        nom, corr, tel = entry_nombre.get(), entry_correo.get(), entry_telefono.get()
-        nuevo_cliente = Cliente(nom, corr, tel)
-        lista_clientes.append(nuevo_cliente)
+        n, c, t = entry_nombre.get(), entry_correo.get(), entry_telefono.get()
+        if not (n and c and t): raise ValidationError("Campos obligatorios faltantes")
+        nuevo = Cliente(n, c, t)
+        lista_clientes.append(nuevo)
+        tabla_clientes.insert("", tk.END, values=(nuevo.nombre, nuevo.correo, nuevo.telefono))
+        combo_clientes["values"] = [cl.nombre for cl in lista_clientes]
+        logging.info(f"REGISTRO: Nuevo cliente {n} añadido.")
+        messagebox.showinfo("Éxito", "Cliente registrado")
     except ValidationError as e:
-        logging.error(f"Error de Validación: {e}")
-        messagebox.showwarning("Dato Obligatorio", str(e))
+        logging.error(f"VALIDACIÓN: {e}")
+        messagebox.showwarning("Atención", str(e))
     except Exception as e:
-        logging.critical(f"Error inesperado: {e}")
-        messagebox.showerror("Error Crítico", "Consulte al administrador.")
-    else:
-        # Solo se ejecuta si el bloque try fue exitoso
-        tabla_clientes.insert("", tk.END, values=(nuevo_cliente.nombre, nuevo_cliente.correo, nuevo_cliente.telefono))
-        combo_clientes["values"] = [c.nombre for c in lista_clientes]
-        messagebox.showinfo("Éxito", f"Cliente {nuevo_cliente.nombre} registrado correctamente.")
+        logging.critical(f"SISTEMA: Error inesperado en registro: {e}")
+        messagebox.showerror("Error", "Fallo crítico al registrar")
     finally:
-        # Limpieza de campos siempre ocurre
-        entry_nombre.delete(0, tk.END)
-        entry_correo.delete(0, tk.END)
-        entry_telefono.delete(0, tk.END)
+        entry_nombre.delete(0, tk.END); entry_correo.delete(0, tk.END); entry_telefono.delete(0, tk.END)
 
 def ejecutar_reserva():
     try:
-        nom_c = combo_clientes.get()
-        tipo_s = combo_servicio.get()
-        cant_str = entry_cantidad.get()
+        nom_c, tipo_s, cant = combo_clientes.get(), combo_servicio.get(), entry_cantidad.get()
+        if not cant.isdigit(): raise BusinessError("La cantidad debe ser un número.")
+        cli = next((c for c in lista_clientes if c.nombre == nom_c), None)
+        if not cli: raise BusinessError("Seleccione un cliente válido.")
         
-        if not cant_str.isdigit():
-            raise BusinessError("La cantidad de horas/días debe ser un número entero.")
-        
-        cliente = next((c for c in lista_clientes if c.nombre == nom_c), None)
-        if not cliente:
-            raise BusinessError("Debe seleccionar un cliente registrado.")
-
-        cantidad = int(cant_str)
-        if tipo_s == "Sala": s = ReservaSala(cantidad)
-        elif tipo_s == "Equipo": s = AlquilerEquipo(cantidad)
+        if tipo_s == "Sala": s = ReservaSala(int(cant))
+        elif tipo_s == "Equipo": s = AlquilerEquipo(int(cant))
         elif tipo_s == "Asesoría": s = AsesoriaEspecializada()
-        else: raise BusinessError("Debe seleccionar un tipo de servicio.")
+        else: raise BusinessError("Servicio no seleccionado.")
 
-        reserva = Reserva(cliente, s)
-        total = reserva.procesar_pago()
-        
-        tabla_reservas.insert("", tk.END, values=(cliente.nombre, s.obtener_detalle(), f"${total}"))
-        messagebox.showinfo("Reserva Confirmada", f"Cliente: {cliente.nombre}\nServicio: {tipo_s}\nTotal: ${total}")
-    except (BusinessError, SoftwareFJError) as e:
-        logging.error(f"Error de Negocio: {e}")
-        messagebox.showerror("No se pudo reservar", str(e))
+        res = Reserva(cli, s)
+        total = res.procesar()
+        tabla_reservas.insert("", tk.END, values=(cli.nombre, s.obtener_detalle(), f"${total}"))
+    except BusinessError as e:
+        logging.error(f"NEGOCIO: {e}")
+        messagebox.showerror("Error de Reserva", str(e))
     except Exception as e:
-        logging.error(f"Fallo general: {e}")
-        messagebox.showerror("Error", "Ocurrió un problema procesando la reserva.")
+        logging.error(f"ERROR: {e}")
+        messagebox.showerror("Error", "No se pudo crear la reserva.")
+
+def eliminar_reserva():
+    selection = tabla_reservas.selection()
+    if not selection:
+        logging.warning("INTERFAZ: Intento de eliminación sin selección.")
+        messagebox.showwarning("Aviso", "Seleccione una reserva")
+        return
+    if messagebox.askyesno("Confirmar", "¿Eliminar reserva?"):
+        for item in selection:
+            info = tabla_reservas.item(item)['values']
+            logging.info(f"ELIMINACIÓN: Reserva de {info[0]} eliminada.")
+            tabla_reservas.delete(item)
+
+def deseleccionar(event):
+    if not tabla_reservas.identify_row(event.y):
+        tabla_reservas.selection_remove(tabla_reservas.selection())
 
 # ============================================================
-# 5. CONSTRUCCIÓN DE LA UI (Tkinter + TTK)
+# 5. INTERFAZ GRÁFICA
 # ============================================================
 app = tk.Tk()
-app.title("Software FJ - Gestión Integral v2.0")
-app.geometry("800x650")
-
-estilo = ttk.Style()
-estilo.theme_use("clam")
+app.title("Software FJ - Gestión Integral")
+app.geometry("800x700")
 
 nb = ttk.Notebook(app)
 nb.pack(fill="both", expand=True)
 
-# --- Pestaña de Clientes ---
-p1 = ttk.Frame(nb, padding=20)
-nb.add(p1, text="Registro de Clientes")
+# Pestaña Clientes
+p1 = ttk.Frame(nb, padding=10); nb.add(p1, text="Clientes")
+ttk.Label(p1, text="Nombre:").pack(); entry_nombre = ttk.Entry(p1); entry_nombre.pack()
+ttk.Label(p1, text="Email:").pack(); entry_correo = ttk.Entry(p1); entry_correo.pack()
+ttk.Label(p1, text="Teléfono:").pack(); entry_telefono = ttk.Entry(p1); entry_telefono.pack()
+ttk.Button(p1, text="Registrar", command=ejecutar_registro).pack(pady=10)
+tabla_clientes = ttk.Treeview(p1, columns=("N", "C", "T"), show="headings"); tabla_clientes.pack(fill="x")
+for c, h in zip(("N", "C", "T"), ("Nombre", "Email", "Teléfono")): tabla_clientes.heading(c, text=h)
 
-ttk.Label(p1, text="Nombre Completo:", font=("Arial", 10, "bold")).pack(pady=2)
-entry_nombre = ttk.Entry(p1, width=40); entry_nombre.pack(pady=2)
+# Pestaña Reservas
+p2 = ttk.Frame(nb, padding=10); nb.add(p2, text="Reservas")
+ttk.Label(p2, text="Cliente:").pack(); combo_clientes = ttk.Combobox(p2, state="readonly"); combo_clientes.pack()
+ttk.Label(p2, text="Servicio:").pack(); combo_servicio = ttk.Combobox(p2, values=["Sala", "Equipo", "Asesoría"], state="readonly"); combo_servicio.pack()
+ttk.Label(p2, text="Cantidad:").pack(); entry_cantidad = ttk.Entry(p2); entry_cantidad.pack()
+ttk.Button(p2, text="Procesar Reserva", command=ejecutar_reserva).pack(pady=5)
 
-ttk.Label(p1, text="Correo Electrónico:", font=("Arial", 10, "bold")).pack(pady=2)
-entry_correo = ttk.Entry(p1, width=40); entry_correo.pack(pady=2)
+tabla_reservas = ttk.Treeview(p2, columns=("C", "D", "T"), show="headings")
+for c, h in zip(("C", "D", "T"), ("Cliente", "Detalle", "Total")): tabla_reservas.heading(c, text=h)
+tabla_reservas.pack(fill="x", pady=10)
+tabla_reservas.bind("<Button-1>", deseleccionar)
 
-ttk.Label(p1, text="Teléfono (Obligatorio):", font=("Arial", 10, "bold")).pack(pady=2)
-entry_telefono = ttk.Entry(p1, width=40); entry_telefono.pack(pady=2)
-
-ttk.Button(p1, text="Registrar Cliente", command=ejecutar_registro).pack(pady=15)
-
-columnas_c = ("N", "C", "T")
-tabla_clientes = ttk.Treeview(p1, columns=columnas_c, show="headings", height=8)
-tabla_clientes.heading("N", text="Nombre"); tabla_clientes.heading("C", text="Email"); tabla_clientes.heading("T", text="Teléfono")
-tabla_clientes.column("N", width=200); tabla_clientes.column("C", width=200); tabla_clientes.column("T", width=150)
-tabla_clientes.pack(fill="x", pady=5)
-
-# --- Pestaña de Reservas ---
-p2 = ttk.Frame(nb, padding=20)
-nb.add(p2, text="Módulo de Reservas")
-
-ttk.Label(p2, text="Seleccionar Cliente:", font=("Arial", 10, "bold")).pack(pady=2)
-combo_clientes = ttk.Combobox(p2, state="readonly", width=37); combo_clientes.pack(pady=2)
-
-ttk.Label(p2, text="Tipo de Servicio:", font=("Arial", 10, "bold")).pack(pady=2)
-combo_servicio = ttk.Combobox(p2, values=["Sala", "Equipo", "Asesoría"], state="readonly", width=37); combo_servicio.pack(pady=2)
-
-ttk.Label(p2, text="Cantidad (Horas / Días):", font=("Arial", 10, "bold")).pack(pady=2)
-entry_cantidad = ttk.Entry(p2, width=40); entry_cantidad.pack(pady=2)
-
-ttk.Button(p2, text="Procesar Reserva", command=ejecutar_reserva).pack(pady=15)
-
-columnas_r = ("Cl", "De", "To")
-tabla_reservas = ttk.Treeview(p2, columns=columnas_r, show="headings", height=8)
-tabla_reservas.heading("Cl", text="Cliente"); tabla_reservas.heading("De", text="Servicio / Detalle"); tabla_reservas.heading("To", text="Total Pago")
-tabla_reservas.column("Cl", width=150); tabla_reservas.column("De", width=300); tabla_reservas.column("To", width=100)
-tabla_reservas.pack(fill="x", pady=5)
+btn_el = tk.Button(p2, text="Eliminar Reserva Seleccionada", command=eliminar_reserva, bg="#ff4d4d", fg="white", font=("Arial", 9, "bold"))
+btn_el.pack(pady=5)
 
 app.mainloop()
